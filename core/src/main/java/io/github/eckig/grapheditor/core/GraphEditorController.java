@@ -8,23 +8,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
-import io.github.eckig.grapheditor.core.connections.ConnectionEventManager;
-import io.github.eckig.grapheditor.core.connections.ConnectorDragManager;
-import io.github.eckig.grapheditor.core.model.DefaultModelEditingManager;
-import io.github.eckig.grapheditor.core.model.ModelLayoutUpdater;
-import io.github.eckig.grapheditor.core.model.ModelSanityChecker;
-import io.github.eckig.grapheditor.core.selections.DefaultSelectionManager;
-import io.github.eckig.grapheditor.core.skins.GraphEditorSkinManager;
-import io.github.eckig.grapheditor.core.skins.SkinManager;
-import io.github.eckig.grapheditor.core.view.ConnectionLayout;
-import io.github.eckig.grapheditor.core.view.GraphEditorView;
-import io.github.eckig.grapheditor.core.view.impl.DefaultConnectionLayout;
-import io.github.eckig.grapheditor.utils.GeometryUtils;
-import io.github.eckig.grapheditor.utils.GraphEditorProperties;
-
-import javafx.geometry.Rectangle2D;
-import javafx.scene.Scene;
-
 import org.eclipse.emf.common.command.CommandStackListener;
 import org.eclipse.emf.common.command.CompoundCommand;
 import org.eclipse.emf.common.notify.Notification;
@@ -43,18 +26,33 @@ import io.github.eckig.grapheditor.GJointSkin;
 import io.github.eckig.grapheditor.GNodeSkin;
 import io.github.eckig.grapheditor.GraphEditor;
 import io.github.eckig.grapheditor.SelectionManager;
+import io.github.eckig.grapheditor.core.connections.ConnectionEventManager;
+import io.github.eckig.grapheditor.core.connections.ConnectorDragManager;
+import io.github.eckig.grapheditor.core.model.DefaultModelEditingManager;
+import io.github.eckig.grapheditor.core.model.ModelLayoutUpdater;
+import io.github.eckig.grapheditor.core.model.ModelSanityChecker;
+import io.github.eckig.grapheditor.core.selections.DefaultSelectionManager;
+import io.github.eckig.grapheditor.core.skins.GraphEditorSkinManager;
+import io.github.eckig.grapheditor.core.skins.SkinManager;
+import io.github.eckig.grapheditor.core.view.ConnectionLayout;
+import io.github.eckig.grapheditor.core.view.GraphEditorView;
+import io.github.eckig.grapheditor.core.view.impl.DefaultConnectionLayout;
 import io.github.eckig.grapheditor.model.GConnection;
 import io.github.eckig.grapheditor.model.GConnector;
 import io.github.eckig.grapheditor.model.GJoint;
 import io.github.eckig.grapheditor.model.GModel;
 import io.github.eckig.grapheditor.model.GNode;
 import io.github.eckig.grapheditor.model.GraphPackage;
+import io.github.eckig.grapheditor.utils.GeometryUtils;
+import io.github.eckig.grapheditor.utils.GraphEditorProperties;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WeakChangeListener;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.Scene;
 
 
 /**
@@ -106,6 +104,7 @@ public class GraphEditorController<E extends GraphEditor>
     private final ConnectorDragManager mConnectorDragManager;
     private final DefaultSelectionManager mSelectionManager;
     private final GraphEditorSkinManager mSkinManager;
+    private final GraphElementManager mElementManager;
 
     private final E mEditor;
     private final GraphEditorView mGraphEditorView;
@@ -133,6 +132,11 @@ public class GraphEditorController<E extends GraphEditor>
         mModelLayoutUpdater = new ModelLayoutUpdater(mSkinManager, mModelEditingManager, pProperties);
         mConnectorDragManager = new ConnectorDragManager(mSkinManager, pConnectionEventManager, mGraphEditorView);
         mSelectionManager = new DefaultSelectionManager(mSkinManager, mGraphEditorView);
+        mElementManager = new GraphElementManager(
+        mSkinManager,
+        mSelectionManager,
+        mModelLayoutUpdater,
+        mConnectorDragManager);
 
         initDefaultListeners();
 
@@ -161,10 +165,10 @@ public class GraphEditorController<E extends GraphEditor>
 
     private void initDefaultListeners()
     {
-        registerChangeListener(GraphPackage.Literals.GMODEL__NODES, e -> processNotification(e, this::addNode, this::removeNode));
+        registerChangeListener(GraphPackage.Literals.GMODEL__NODES, e -> processNotification(e, mElementManager::addNode, mElementManager::removeNode));
 
         registerChangeListener(GraphPackage.Literals.GNODE__CONNECTORS,
-                e -> processNotification(e, this::addConnector, this::removeConnector));
+                e -> processNotification(e, mElementManager::addConnector, mElementManager::removeConnector));
 
         registerChangeListener(GraphPackage.Literals.GNODE__CONNECTORS, e ->
         {
@@ -176,7 +180,7 @@ public class GraphEditorController<E extends GraphEditor>
             }
         });
         registerChangeListener(GraphPackage.Literals.GMODEL__CONNECTIONS,
-                e -> processNotification(e, this::addConnection, this::removeConnection));
+                e -> processNotification(e, mElementManager::addConnection, mElementManager::removeConnection));
 
         registerChangeListener(GraphPackage.Literals.GCONNECTION__JOINTS,
                 e -> processNotification(e, (GJoint j) -> addJoint(j, e.getNotifier()),
@@ -194,8 +198,8 @@ public class GraphEditorController<E extends GraphEditor>
         registerChangeListener(GraphPackage.Literals.GNODE__TYPE, e ->
         {
             final GNode node = (GNode) e.getNotifier();
-            removeNode(node);
-            addNode(node);
+            mElementManager.removeNode(node);
+            mElementManager.addNode(node);
         });
     }
 
@@ -239,11 +243,11 @@ public class GraphEditorController<E extends GraphEditor>
 
             for (int i = 0; i < pOldModel.getNodes().size(); i++)
             {
-                removeNode(pOldModel.getNodes().get(i));
+                mElementManager.removeNode(pOldModel.getNodes().get(i));
             }
             for (int i = 0; i < pOldModel.getConnections().size(); i++)
             {
-                removeConnection(pOldModel.getConnections().get(i));
+                mElementManager.removeConnection(pOldModel.getConnections().get(i));
             }
         }
 
@@ -274,12 +278,12 @@ public class GraphEditorController<E extends GraphEditor>
             {
                 for(final GNode node : pNewModel.getNodes())
                 {
-                    addNode(node);
+                    mElementManager.addNode(node);
                 }
 
                 for(final GConnection connection : pNewModel.getConnections())
                 {
-                    addConnection(connection);
+                    mElementManager.addConnection(connection);
                 }
             }
 
@@ -363,31 +367,38 @@ public class GraphEditorController<E extends GraphEditor>
     }
 
     private void onNodeCreated(final GNode pNode)
-    {
-        mModelLayoutUpdater.addNode(pNode);
-        mSelectionManager.addNode(pNode);
-        markConnectorsDirty(pNode);
+{
+    mModelLayoutUpdater.addNode(pNode);
+    mSelectionManager.addNode(pNode);
+
+    mElementManager.addNode(pNode);
+
+    markConnectorsDirty(pNode);
     }
 
     private void onConnectorCreated(final GConnector pConnector)
-    {
-        mConnectorDragManager.addConnector(pConnector);
-        mSelectionManager.addConnector(pConnector);
-        markConnectorsDirty(pConnector.getParent());
-    }
+{
+    mConnectorDragManager.addConnector(pConnector);
+    mSelectionManager.addConnector(pConnector);
+
+    mElementManager.addConnector(pConnector);
+
+    markConnectorsDirty(pConnector.getParent());
+}
 
     private void onConnectionCreated(final GConnection pConnection)
-    {
-        mSelectionManager.addConnection(pConnection);
-        mSkinManager.updateJoints(pConnection);
-    }
+{
+    mSelectionManager.addConnection(pConnection);
+
+    mElementManager.addConnection(pConnection);
+
+    mSkinManager.updateJoints(pConnection);
+}
 
     private void onJointCreated(final GJoint pJoint)
-    {
-        mModelLayoutUpdater.addJoint(pJoint);
-        mSelectionManager.addJoint(pJoint);
-        mSkinManager.updateJoints(pJoint.getConnection());
-    }
+{
+    mElementManager.addJoint(pJoint);
+}
 
     private void processFeatureChanged(final Notification pNotification)
     {
@@ -456,35 +467,32 @@ public class GraphEditorController<E extends GraphEditor>
     }
 
     private void addJoint(final GJoint pJoint, final Object pNotifier)
-    {
-        updateConnectionAfterJointChange(pJoint, pNotifier);
-    }
+{
+    mElementManager.addJoint(pJoint);
 
-    private void removeJoint(final GJoint pJoint)
+    if (pJoint.getConnection() != null)
     {
-        mSelectionManager.removeJoint(pJoint);
-        mSelectionManager.clearSelection(pJoint);
-        mModelLayoutUpdater.removeJoint(pJoint);
-        mSkinManager.removeJoint(pJoint);
+        mSkinManager.updateJoints(pJoint.getConnection());
     }
+    else if (pNotifier instanceof GConnection connection)
+    {
+        mSkinManager.updateJoints(connection);
+    }
+}
 
-    private void removeJoint(final GJoint pJoint, final Object pNotifier)
-    {
-        removeJoint(pJoint);
-        updateConnectionAfterJointChange(pJoint, pNotifier);
-    }
+private void removeJoint(final GJoint pJoint, final Object pNotifier)
+{
+    mElementManager.removeJoint(pJoint);
 
-    private void updateConnectionAfterJointChange(final GJoint pJoint, final Object pNotifier)
+    if (pJoint.getConnection() != null)
     {
-        if (pJoint.getConnection() != null)
-        {
-            mSkinManager.updateJoints(pJoint.getConnection());
-        }
-        else if(pNotifier instanceof GConnection c)
-        {
-            mSkinManager.updateJoints(c);
-        }
+        mSkinManager.updateJoints(pJoint.getConnection());
     }
+    else if (pNotifier instanceof GConnection connection)
+    {
+        mSkinManager.updateJoints(connection);
+    }
+}
 
     /**
      * @param pNode
@@ -497,57 +505,6 @@ public class GraphEditorController<E extends GraphEditor>
         mSkinManager.updateConnectors(pNode);
     }
 
-    private void addConnection(final GConnection pConnection)
-    {
-        mSkinManager.lookupOrCreateConnection(pConnection); // implicit create
-    }
-
-    private void removeConnection(final GConnection pConnection)
-    {
-        mSelectionManager.removeConnection(pConnection);
-        mSelectionManager.clearSelection(pConnection);
-        mSkinManager.removeConnection(pConnection);
-
-        for (final GJoint joint : pConnection.getJoints())
-        {
-            removeJoint(joint);
-        }
-    }
-
-    private void addNode(final GNode pNode)
-    {
-        mSkinManager.lookupOrCreateNode(pNode); // implicit create
-
-        for (int i = 0; i < pNode.getConnectors().size(); i++)
-        {
-            addConnector(pNode.getConnectors().get(i));
-        }
-    }
-
-    private void removeNode(final GNode pNode)
-    {
-        for (int i = 0; i < pNode.getConnectors().size(); i++)
-        {
-            removeConnector(pNode.getConnectors().get(i));
-        }
-
-        mSelectionManager.removeNode(pNode);
-        mSelectionManager.clearSelection(pNode);
-        mModelLayoutUpdater.removeNode(pNode);
-        mSkinManager.removeNode(pNode);
-    }
-
-    private void addConnector(final GConnector pConnector)
-    {
-        mSkinManager.lookupOrCreateConnector(pConnector); // implicit create
-    }
-
-    private void removeConnector(final GConnector pConnector)
-    {
-        mSelectionManager.removeConnector(pConnector);
-        mConnectorDragManager.removeConnector(pConnector);
-        mSkinManager.removeConnector(pConnector);
-    }
 
     /**
      * @return creates the default {@link ConnectionLayout}
