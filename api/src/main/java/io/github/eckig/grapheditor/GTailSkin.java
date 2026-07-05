@@ -30,7 +30,7 @@ public abstract class GTailSkin extends GSkin<GConnector>
      * @param connector
      *         the {@link GConnector} that the tail will extend from
      */
-    public GTailSkin(final GConnector connector)
+    protected GTailSkin(final GConnector connector)
     {
         super(connector);
     }

@@ -15,6 +15,10 @@ import javafx.util.Duration;
  */
 public class ColorAnimationUtils {
 
+    private ColorAnimationUtils() {
+        /* This utility class should not be instantiated */
+    }
+
     private static final String TIMELINE_KEY = "color-animation-utils-timeline";
 
     private static final String COLOR_FORMAT = "#%02x%02x%02x";

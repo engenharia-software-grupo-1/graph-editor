@@ -26,7 +26,7 @@ public abstract class GConnectorSkin extends GSkin<GConnector>
      * @param connector
      *         the {@link GConnector} represented by the skin
      */
-    public GConnectorSkin(final GConnector connector)
+    protected GConnectorSkin(final GConnector connector)
     {
         super(connector);
     }

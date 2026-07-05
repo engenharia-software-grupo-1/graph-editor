@@ -37,7 +37,7 @@ public abstract class GNodeSkin extends GSkin<GNode>
      * @param node
      *         the {@link GNode} represented by the skin
      */
-    public GNodeSkin(final GNode node)
+    protected GNodeSkin(final GNode node)
     {
         super(node);
         root = createContainer();

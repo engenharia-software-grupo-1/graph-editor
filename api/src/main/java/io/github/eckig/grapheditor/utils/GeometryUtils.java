@@ -26,6 +26,9 @@ import javafx.scene.layout.Region;
  */
 public class GeometryUtils
 {
+    private GeometryUtils() {
+        /* This utility class should not be instantiated */
+    }
 
     private static final double HALF_A_PIXEL = 0.5;
 

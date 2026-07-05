@@ -14,6 +14,10 @@ import javafx.scene.Node;
 public class EventUtils
 {
 
+    private EventUtils() {
+        /* This utility class should not be instantiated */
+    }
+
     public static <N extends Node, T extends Event> void removeEventHandlers(final Map<N, EventHandler<T>> pEventHandlers,
             final EventType<T> pType)
     {
