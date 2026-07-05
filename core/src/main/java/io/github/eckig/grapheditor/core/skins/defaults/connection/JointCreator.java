@@ -96,73 +96,96 @@ public class JointCreator {
         root.setOnMouseMoved(event -> updateHoverEffectPosition(event, root));
         root.setOnMouseExited(event -> hoverEffect.setVisible(false));
 
-        root.setOnMouseDragged(event -> {
-
-            if (!checkEditable() || !event.getButton().equals(MouseButton.PRIMARY) || temporarySelectedJointSkin == null) {
-                return;
-            }
-
-            temporarySelectedJointSkin.getRoot().fireEvent(event);
-            event.consume();
-        });
-
-        // This handler creates 2 temporary joints which can be dragged around.
-        root.setOnMousePressed(event -> {
-
-            final double sceneX = event.getSceneX();
-            final double sceneY = event.getSceneY();
-
-            final Point2D offset = offsetCalculator.getOffset(sceneX, sceneY);
-
-            if (!checkEditable() || !event.getButton().equals(MouseButton.PRIMARY) || offset == null) {
-                return;
-            }
-
-            oldJointPositions = GeometryUtils.getJointPositions(connection);
-
-            final int index = getNewJointLocation(event, root);
-			if (index > -1) {
-
-				final int oldJointCount = connection.getJoints().size();
-
-				addTemporaryJoints(index, newJointX, newJointY);
-
-				if (index == oldJointCount) {
-					final GJoint newSelectedJoint1 = connection.getJoints().get(index);
-					temporarySelectedJointSkin = graphEditor.getSkinLookup().lookupJoint(newSelectedJoint1);
-				} else {
-					final GJoint newSelectedJoint2 = connection.getJoints().get(index + 1);
-					temporarySelectedJointSkin = graphEditor.getSkinLookup().lookupJoint(newSelectedJoint2);
-				}
-
-				temporarySelectedJointSkin.getRoot().fireEvent(event);
-				if(graphEditor != null) {
-					graphEditor.getSelectionManager().select(temporarySelectedJointSkin.getItem());
-				}
-			}
-
-            event.consume();
-        });
-
-        // This handler updates the model with the new joints *only* if the connection shape has actually changed.
-        root.setOnMouseReleased(event -> {
-
-            if (!checkEditable() || !event.getButton().equals(MouseButton.PRIMARY) || temporarySelectedJointSkin == null) {
-                return;
-            }
-
-            final List<Point2D> newJointPositions = getNewJointPositions();
-
-            // It is important to remove the temporary joints even if we add new joints, otherwise we mess up the
-            // undo/redo stack.
-            removeTemporaryJoints();
-
-            if (checkForNetChange(oldJointPositions, newJointPositions)) {
-                JointCommands.setNewJoints(newJointPositions, connection);
-            }
-        });
+        root.setOnMouseDragged(event -> handleMouseDragged(event));
+        root.setOnMousePressed(event -> handleMousePressed(event, root));
+        root.setOnMouseReleased(event -> handleMouseReleased(event));
     }
 
+    private void handleMouseDragged(final MouseEvent event) {
+
+        if (!checkEditable()
+                || !event.getButton().equals(MouseButton.PRIMARY)
+                || temporarySelectedJointSkin == null) {
+            return;
+        }
+
+        temporarySelectedJointSkin.getRoot().fireEvent(event);
+        event.consume();
+    }
+
+        private void handleMousePressed(final MouseEvent event, final Group root) {
+
+        final Point2D offset = offsetCalculator.getOffset(
+                event.getSceneX(),
+                event.getSceneY());
+
+        if (!checkEditable()
+                || !event.getButton().equals(MouseButton.PRIMARY)
+                || offset == null) {
+            return;
+        }
+
+        oldJointPositions = GeometryUtils.getJointPositions(connection);
+
+        final int index = getNewJointLocation(event, root);
+
+        if (index < 0) {
+            event.consume();
+            return;
+        }
+
+        createTemporaryJoint(index);
+
+        temporarySelectedJointSkin.getRoot().fireEvent(event);
+
+        selectTemporaryJoint();
+
+        event.consume();
+    }
+
+        private void createTemporaryJoint(final int index) {
+
+        final int oldJointCount = connection.getJoints().size();
+
+        addTemporaryJoints(index, newJointX, newJointY);
+
+        final GJoint selectedJoint;
+
+        if (index == oldJointCount) {
+            selectedJoint = connection.getJoints().get(index);
+        } else {
+            selectedJoint = connection.getJoints().get(index + 1);
+        }
+
+        temporarySelectedJointSkin =
+                graphEditor.getSkinLookup().lookupJoint(selectedJoint);
+    }
+
+    private void selectTemporaryJoint() {
+
+        if (graphEditor != null) {
+            graphEditor.getSelectionManager()
+                    .select(temporarySelectedJointSkin.getItem());
+        }
+    }
+
+        private void handleMouseReleased(final MouseEvent event) {
+
+        if (!checkEditable()
+                || !event.getButton().equals(MouseButton.PRIMARY)
+                || temporarySelectedJointSkin == null) {
+            return;
+        }
+
+        final List<Point2D> newJointPositions = getNewJointPositions();
+
+        removeTemporaryJoints();
+
+        if (checkForNetChange(oldJointPositions, newJointPositions)) {
+            JointCommands.setNewJoints(newJointPositions, connection);
+        }
+    }
+        
     /**
      * Updates the position of the joint creator effect based on the cursor position.
      *

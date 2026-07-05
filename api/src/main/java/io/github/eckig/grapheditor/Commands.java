@@ -114,48 +114,83 @@ public class Commands
     {
         final EditingDomain editingDomain = getEditingDomain(model);
 
-        if (editingDomain != null)
+        if (editingDomain == null)
         {
-            final CompoundCommand command = new CompoundCommand();
-            command.append(RemoveCommand.create(editingDomain, model, NODES, node));
+            return;
+        }
 
-            final List<GConnection> connectionsToDelete = new ArrayList<>();
+        final CompoundCommand command = new CompoundCommand();
+        command.append(RemoveCommand.create(editingDomain, model, NODES, node));
 
-            for (final GConnector connector : node.getConnectors())
-            {
-                for (final GConnection connection : connector.getConnections())
-                {
-                    if (connection != null && !connectionsToDelete.contains(connection))
-                    {
-                        connectionsToDelete.add(connection);
-                    }
-                }
-            }
+        final List<GConnection> connectionsToDelete = collectConnectionsToDelete(node);
+        appendConnectionRemovalCommands(command, editingDomain, model, node, connectionsToDelete);
 
-            for (final GConnection connection : connectionsToDelete)
-            {
-                command.append(RemoveCommand.create(editingDomain, model, CONNECTIONS, connection));
-
-                final GConnector source = connection.getSource();
-                final GConnector target = connection.getTarget();
-
-                if (!node.equals(source.getParent()))
-                {
-                    command.append(RemoveCommand.create(editingDomain, source, CONNECTOR_CONNECTIONS, connection));
-                }
-
-                if (!node.equals(target.getParent()))
-                {
-                    command.append(RemoveCommand.create(editingDomain, target, CONNECTOR_CONNECTIONS, connection));
-                }
-            }
-
-            if (command.canExecute())
-            {
-                editingDomain.getCommandStack().execute(command);
-            }
+        if (command.canExecute())
+        {
+            editingDomain.getCommandStack().execute(command);
         }
     }
+
+    private static List<GConnection> collectConnectionsToDelete(final GNode node)
+    {
+        final List<GConnection> connectionsToDelete = new ArrayList<>();
+
+        for (final GConnector connector : node.getConnectors())
+        {
+            for (final GConnection connection : connector.getConnections())
+            {
+                if (connection != null && !connectionsToDelete.contains(connection))
+                {
+                    connectionsToDelete.add(connection);
+                }
+            }
+        }
+
+        return connectionsToDelete;
+    }
+
+    private static void appendConnectionRemovalCommands(
+            final CompoundCommand command,
+            final EditingDomain editingDomain,
+            final GModel model,
+            final GNode node,
+            final List<GConnection> connections)
+    {
+        for (final GConnection connection : connections)
+        {
+            command.append(RemoveCommand.create(editingDomain, model, CONNECTIONS, connection));
+            removeConnectorReferences(command, editingDomain, node, connection);
+        }
+    }
+
+    private static void removeConnectorReferences(
+            final CompoundCommand command,
+            final EditingDomain editingDomain,
+            final GNode node,
+            final GConnection connection)
+    {
+        final GConnector source = connection.getSource();
+        final GConnector target = connection.getTarget();
+
+        if (!node.equals(source.getParent()))
+        {
+            command.append(RemoveCommand.create(
+                    editingDomain,
+                    source,
+                    CONNECTOR_CONNECTIONS,
+                    connection));
+        }
+
+        if (!node.equals(target.getParent()))
+        {
+            command.append(RemoveCommand.create(
+                    editingDomain,
+                    target,
+                    CONNECTOR_CONNECTIONS,
+                    connection));
+        }
+    }
+
 
     /**
      * Clears everything in the given model.
