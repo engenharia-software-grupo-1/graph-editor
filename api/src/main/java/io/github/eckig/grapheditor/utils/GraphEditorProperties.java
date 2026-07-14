@@ -12,7 +12,6 @@ import io.github.eckig.grapheditor.impl.GraphEventManagerImpl;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import javafx.event.Event;
@@ -64,10 +63,7 @@ public class GraphEditorProperties implements GraphEventManager
     private double eastBoundValue = DEFAULT_BOUND_VALUE;
     private double westBoundValue = DEFAULT_BOUND_VALUE;
 
-    // Off by default.
-    private final BooleanProperty gridVisible = new SimpleBooleanProperty(this, "gridVisible"); //$NON-NLS-1$
-    private final BooleanProperty snapToGrid = new SimpleBooleanProperty(this, "snapToGrid"); //$NON-NLS-1$
-    private final DoubleProperty gridSpacing = new SimpleDoubleProperty(this, "gridSpacing", DEFAULT_GRID_SPACING); //$NON-NLS-1$
+    private final GridProperties gridProperties = new GridProperties();
 
     private final Map<EditorElement, BooleanProperty> readOnly = new EnumMap<>(EditorElement.class);
 
@@ -101,9 +97,9 @@ public class GraphEditorProperties implements GraphEventManager
         eastBoundValue = editorProperties.getEastBoundValue();
         westBoundValue = editorProperties.getWestBoundValue();
 
-        gridVisible.set(editorProperties.isGridVisible());
-        snapToGrid.set(editorProperties.isSnapToGridOn());
-        gridSpacing.set(editorProperties.getGridSpacing());
+        gridProperties.setGridVisible(editorProperties.isGridVisible());
+        gridProperties.setSnapToGrid(editorProperties.isSnapToGridOn());
+        gridProperties.setGridSpacing(editorProperties.getGridSpacing());
 
         for (final Map.Entry<EditorElement, BooleanProperty> entry : editorProperties.readOnly.entrySet())
         {
@@ -203,9 +199,8 @@ public class GraphEditorProperties implements GraphEventManager
      * @return {@code true} if the background grid is visible, {@code false} if
      *         not
      */
-    public boolean isGridVisible()
-    {
-        return gridVisible.get();
+    public boolean isGridVisible() {
+        return gridProperties.isGridVisible();
     }
 
     /**
@@ -215,9 +210,8 @@ public class GraphEditorProperties implements GraphEventManager
      *            {@code true} if the background grid should be visible,
      *            {@code false} if not
      */
-    public void setGridVisible(final boolean pGridVisible)
-    {
-        gridVisible.set(pGridVisible);
+    public void setGridVisible(boolean pGridVisible) {
+        gridProperties.setGridVisible(pGridVisible);
     }
 
     /**
@@ -226,9 +220,8 @@ public class GraphEditorProperties implements GraphEventManager
      * @return a {@link BooleanProperty} tracking whether the grid is visible or
      *         not
      */
-    public BooleanProperty gridVisibleProperty()
-    {
-        return gridVisible;
+    public BooleanProperty gridVisibleProperty() {
+        return gridProperties.gridVisibleProperty();
     }
 
     /**
@@ -236,9 +229,8 @@ public class GraphEditorProperties implements GraphEventManager
      *
      * @return {@code true} if snap-to-grid is on, {@code false} if not
      */
-    public boolean isSnapToGridOn()
-    {
-        return snapToGrid.get();
+    public boolean isSnapToGridOn() {
+        return gridProperties.isSnapToGridOn();
     }
 
     /**
@@ -248,20 +240,17 @@ public class GraphEditorProperties implements GraphEventManager
      *            {@code true} if snap-to-grid should be on, {@code false} if
      *            not
      */
-    public void setSnapToGrid(final boolean pSnapToGrid)
-    {
-        snapToGrid.set(pSnapToGrid);
+    public void setSnapToGrid(boolean pSnapToGrid) {
+        gridProperties.setSnapToGrid(pSnapToGrid);
     }
-
     /**
      * Gets the snap-to-grid property.
      *
      * @return a {@link BooleanProperty} tracking whether snap-to-grid is on or
      *         off
      */
-    public BooleanProperty snapToGridProperty()
-    {
-        return snapToGrid;
+    public BooleanProperty snapToGridProperty() {
+        return gridProperties.snapToGridProperty();
     }
 
     /**
@@ -269,10 +258,9 @@ public class GraphEditorProperties implements GraphEventManager
      *
      * @return the current grid spacing
      */
-    public double getGridSpacing()
-    {
-        return gridSpacing.get();
-    }
+    public double getGridSpacing() {
+    return gridProperties.getGridSpacing();
+}
 
     /**
      * Sets the grid spacing to be used if the grid is visible and/or
@@ -285,20 +273,18 @@ public class GraphEditorProperties implements GraphEventManager
      * @param pGridSpacing
      *         the grid spacing to be used
      */
-    public void setGridSpacing(final double pGridSpacing)
-    {
-        gridSpacing.set(pGridSpacing);
-    }
+    public void setGridSpacing(double pGridSpacing) {
+    gridProperties.setGridSpacing(pGridSpacing);
+}
 
     /**
      * Gets the grid spacing property.
      *
      * @return the grid spacing {@link DoubleProperty}.
      */
-    public DoubleProperty gridSpacingProperty()
-    {
-        return gridSpacing;
-    }
+    public DoubleProperty gridSpacingProperty() {
+    return gridProperties.gridSpacingProperty();
+}
 
     /**
      * Gets the read only property
