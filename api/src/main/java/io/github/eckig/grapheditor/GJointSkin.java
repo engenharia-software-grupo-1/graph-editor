@@ -29,7 +29,7 @@ public abstract class GJointSkin extends GSkin<GJoint>
      * @param joint
      *         the {@link GJoint} represented by the skin
      */
-    public GJointSkin(final GJoint joint)
+    protected GJointSkin(final GJoint joint)
     {
         super(joint);
     }

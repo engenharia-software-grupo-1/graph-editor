@@ -48,7 +48,7 @@ public abstract class ConnectionSegment
      * @param intersections
      *            the intersection-points of this segment with other connections
      */
-    public ConnectionSegment(final Point2D start, final Point2D end, final double[] intersections)
+    protected ConnectionSegment(final Point2D start, final Point2D end, final double[] intersections)
     {
         this.start = start;
         this.end = end;

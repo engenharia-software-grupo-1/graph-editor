@@ -31,7 +31,7 @@ public abstract class GConnectionSkin extends GSkin<GConnection>
      * @param connection
      *         the {@link GConnection} represented by the skin
      */
-    public GConnectionSkin(final GConnection connection)
+    protected GConnectionSkin(final GConnection connection)
     {
         super(connection);
     }

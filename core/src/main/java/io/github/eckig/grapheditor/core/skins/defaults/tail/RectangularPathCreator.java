@@ -12,6 +12,10 @@ import javafx.geometry.Side;
  */
 public class RectangularPathCreator {
 
+    private RectangularPathCreator() {
+        /* This utility class should not be instantiated */
+    }
+
     private static final double MINIMUM_EXTENSION = 30;
 
     /**

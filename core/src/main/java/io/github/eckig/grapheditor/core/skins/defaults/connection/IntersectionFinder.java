@@ -18,6 +18,9 @@ import javafx.geometry.Point2D;
  */
 public class IntersectionFinder
 {
+    private IntersectionFinder() {
+        /* This utility class should not be instantiated */
+    }
 
     /**
      * Finds the intersection points of the connection with all other
