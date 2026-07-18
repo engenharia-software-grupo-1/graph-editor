@@ -48,51 +48,90 @@ public final class ConnectionCopier
     {
         final Map<GConnection, GConnection> copiedConnections = new HashMap<>();
 
-        for (final var node : copies.keySet())
+        for (final var entry : copies.entrySet())
         {
-            final var copy = copies.get(node);
-
-            for (final var connector : node.getConnectors())
-            {
-                final var connectorIndex = node.getConnectors().indexOf(connector);
-                final var copiedConnector = copy.getConnectors().get(connectorIndex);
-
-                copiedConnector.getConnections().clear();
-
-                for (final var connection : connector.getConnections())
-                {
-                    final var opposingNode = getOpposingNode(connector, connection);
-                    final var opposingNodePresent = copies.containsKey(opposingNode);
-
-                    if (opposingNodePresent)
-                    {
-                        final GConnection copiedConnection;
-                        if (!copiedConnections.containsKey(connection))
-                        {
-                            copiedConnection = EcoreUtil.copy(connection);
-                            copiedConnections.put(connection, copiedConnection);
-                        }
-                        else
-                        {
-                            copiedConnection = copiedConnections.get(connection);
-                        }
-
-                        if (connection.getSource().equals(connector))
-                        {
-                            copiedConnection.setSource(copiedConnector);
-                        }
-                        else
-                        {
-                            copiedConnection.setTarget(copiedConnector);
-                        }
-
-                        copiedConnector.getConnections().add(copiedConnection);
-                    }
-                }
-            }
+            copyNodeConnections(entry.getKey(), entry.getValue(), copies, copiedConnections);
         }
 
         return new ArrayList<>(copiedConnections.values());
+    }
+
+    private static void copyNodeConnections(
+            final GNode originalNode,
+            final GNode copiedNode,
+            final Map<GNode, GNode> copies,
+            final Map<GConnection, GConnection> copiedConnections)
+    {
+        for (final var connector : originalNode.getConnectors())
+        {
+            final var connectorIndex = originalNode.getConnectors().indexOf(connector);
+            final var copiedConnector = copiedNode.getConnectors().get(connectorIndex);
+
+            copiedConnector.getConnections().clear();
+
+            copyConnectorConnections(
+                    connector,
+                    copiedConnector,
+                    copies,
+                    copiedConnections);
+        }
+    }
+
+    private static void copyConnectorConnections(
+            final GConnector connector,
+            final GConnector copiedConnector,
+            final Map<GNode, GNode> copies,
+            final Map<GConnection, GConnection> copiedConnections)
+    {
+        for (final var connection : connector.getConnections())
+        {
+            final var opposingNode = getOpposingNode(connector, connection);
+
+            if (!copies.containsKey(opposingNode))
+            {
+                continue;
+            }
+
+            final var copiedConnection = getOrCreateCopiedConnection(
+                    connection,
+                    copiedConnections);
+
+            updateConnectionEndpoint(
+                    connection,
+                    connector,
+                    copiedConnector,
+                    copiedConnection);
+
+            copiedConnector.getConnections().add(copiedConnection);
+        }
+    }
+
+    private static GConnection getOrCreateCopiedConnection(
+            final GConnection connection,
+            final Map<GConnection, GConnection> copiedConnections)
+    {
+        if (!copiedConnections.containsKey(connection))
+        {
+            copiedConnections.put(connection, EcoreUtil.copy(connection));
+        }
+
+        return copiedConnections.get(connection);
+    }
+
+    private static void updateConnectionEndpoint(
+            final GConnection originalConnection,
+            final GConnector originalConnector,
+            final GConnector copiedConnector,
+            final GConnection copiedConnection)
+    {
+        if (originalConnection.getSource().equals(originalConnector))
+        {
+            copiedConnection.setSource(copiedConnector);
+        }
+        else
+        {
+            copiedConnection.setTarget(copiedConnector);
+        }
     }
 
     /**
