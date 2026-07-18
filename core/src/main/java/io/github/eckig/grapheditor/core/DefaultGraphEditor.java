@@ -7,11 +7,6 @@ import java.util.Collection;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import io.github.eckig.grapheditor.core.connections.ConnectionEventManager;
-import io.github.eckig.grapheditor.core.view.GraphEditorView;
-import io.github.eckig.grapheditor.utils.GraphEditorProperties;
-import io.github.eckig.grapheditor.utils.RemoveContext;
-
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.ecore.EObject;
 
@@ -24,11 +19,15 @@ import io.github.eckig.grapheditor.GTailSkin;
 import io.github.eckig.grapheditor.GraphEditor;
 import io.github.eckig.grapheditor.SelectionManager;
 import io.github.eckig.grapheditor.SkinLookup;
+import io.github.eckig.grapheditor.core.connections.ConnectionEventManager;
+import io.github.eckig.grapheditor.core.view.GraphEditorView;
 import io.github.eckig.grapheditor.model.GConnection;
 import io.github.eckig.grapheditor.model.GConnector;
 import io.github.eckig.grapheditor.model.GJoint;
 import io.github.eckig.grapheditor.model.GModel;
 import io.github.eckig.grapheditor.model.GNode;
+import io.github.eckig.grapheditor.utils.GraphEditorProperties;
+import io.github.eckig.grapheditor.utils.RemoveContext;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ObjectPropertyBase;
 import javafx.scene.layout.Region;
@@ -45,6 +44,8 @@ public class DefaultGraphEditor implements GraphEditor
     private final GraphEditorView mView;
     private final ConnectionEventManager mConnectionEventManager = new ConnectionEventManager();
     private final GraphEditorController<DefaultGraphEditor> mController;
+    private final GraphEditorConfiguration configuration;
+    private final GraphEditorEventManager eventManager;
 
     private final ObjectProperty<GModel> mModelProperty = new ObjectPropertyBase<>()
     {
@@ -79,42 +80,46 @@ public class DefaultGraphEditor implements GraphEditor
         mProperties = pProperties == null ? new GraphEditorProperties() : pProperties;
         mView = new GraphEditorView(mProperties);
         mController = new GraphEditorController<>(this, mView, mConnectionEventManager, mProperties);
+        configuration = new GraphEditorConfiguration(mController);
+        eventManager = new GraphEditorEventManager(
+        mConnectionEventManager,
+        mController.getModelEditingManager());
     }
 
     @Override
     public void setNodeSkinFactory(final Callback<GNode, GNodeSkin> pSkinFactory)
     {
-        mController.getSkinManager().setNodeSkinFactory(pSkinFactory);
+        configuration.setNodeSkinFactory(pSkinFactory);
     }
 
     @Override
     public void setConnectorSkinFactory(final Callback<GConnector, GConnectorSkin> pConnectorSkinFactory)
     {
-        mController.getSkinManager().setConnectorSkinFactory(pConnectorSkinFactory);
+        configuration.setConnectorSkinFactory(pConnectorSkinFactory);
     }
 
     @Override
     public void setConnectionSkinFactory(final Callback<GConnection, GConnectionSkin> pConnectionSkinFactory)
     {
-        mController.getSkinManager().setConnectionSkinFactory(pConnectionSkinFactory);
+        configuration.setConnectionSkinFactory(pConnectionSkinFactory);
     }
 
     @Override
     public void setJointSkinFactory(final Callback<GJoint, GJointSkin> pJointSkinFactory)
     {
-        mController.getSkinManager().setJointSkinFactory(pJointSkinFactory);
+        configuration.setJointSkinFactory(pJointSkinFactory);
     }
 
     @Override
     public void setTailSkinFactory(final Callback<GConnector, GTailSkin> pTailSkinFactory)
     {
-        mController.getSkinManager().setTailSkinFactory(pTailSkinFactory);
+        configuration.setTailSkinFactory(pTailSkinFactory);
     }
 
     @Override
     public void setConnectorValidator(final GConnectorValidator pValidator)
     {
-        mController.setConnectorValidator(pValidator);
+        configuration.setConnectorValidator(pValidator);
     }
 
     @Override
@@ -168,30 +173,25 @@ public class DefaultGraphEditor implements GraphEditor
     @Override
     public void setOnConnectionCreated(final Function<GConnection, Command> pConsumer)
     {
-        mConnectionEventManager.setOnConnectionCreated(pConsumer);
+        eventManager.setOnConnectionCreated(pConsumer);
     }
 
     @Override
     public void setOnConnectionRemoved(final BiFunction<RemoveContext, GConnection, Command> pOnConnectionRemoved)
     {
-        mConnectionEventManager.setOnConnectionRemoved(pOnConnectionRemoved);
-        getModelEditingManager().setOnConnectionRemoved(pOnConnectionRemoved);
+        eventManager.setOnConnectionRemoved(pOnConnectionRemoved);
     }
 
     @Override
     public void setOnNodeRemoved(final BiFunction<RemoveContext, GNode, Command> pOnNodeRemoved)
     {
-        getModelEditingManager().setOnNodeRemoved(pOnNodeRemoved);
+        eventManager.setOnNodeRemoved(pOnNodeRemoved);
     }
 
     @Override
     public void delete(Collection<EObject> pItems)
     {
-        getModelEditingManager().remove(pItems);
+        eventManager.delete(pItems);
     }
 
-    private ModelEditingManager getModelEditingManager()
-    {
-        return mController.getModelEditingManager();
-    }
 }
