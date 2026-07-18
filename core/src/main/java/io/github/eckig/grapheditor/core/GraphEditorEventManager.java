@@ -25,16 +25,10 @@ public class GraphEditorEventManager {
         this.modelEditingManager = modelEditingManager;
     }
 
-    /**
-     * Configura o callback executado quando uma conexão é criada.
-     */
     public void setOnConnectionCreated(Function<GConnection, Command> consumer) {
         connectionEventManager.setOnConnectionCreated(consumer);
     }
 
-    /**
-     * Configura o callback executado quando uma conexão é removida.
-     */
     public void setOnConnectionRemoved(
             BiFunction<RemoveContext, GConnection, Command> callback) {
 
@@ -42,18 +36,12 @@ public class GraphEditorEventManager {
         modelEditingManager.setOnConnectionRemoved(callback);
     }
 
-    /**
-     * Configura o callback executado quando um nó é removido.
-     */
     public void setOnNodeRemoved(
             BiFunction<RemoveContext, GNode, Command> callback) {
 
         modelEditingManager.setOnNodeRemoved(callback);
     }
 
-    /**
-     * Remove elementos do modelo.
-     */
     public void delete(Collection<EObject> items) {
         modelEditingManager.remove(items);
     }
