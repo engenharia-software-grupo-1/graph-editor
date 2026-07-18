@@ -5,8 +5,10 @@ package io.github.eckig.grapheditor;
 
 import java.util.List;
 
+import io.github.eckig.grapheditor.model.GConnector;
 import io.github.eckig.grapheditor.model.GNode;
 import io.github.eckig.grapheditor.utils.DraggableBox;
+import io.github.eckig.grapheditor.utils.GeometryUtils;
 import io.github.eckig.grapheditor.utils.ResizableBox;
 import javafx.geometry.Point2D;
 
@@ -118,5 +120,32 @@ public abstract class GNodeSkin extends GSkin<GNode>
                 layoutConnectors();
             }
         };
+    }
+
+    public static Point2D calculateGlobalConnectorPosition(final GConnector connector, final SkinLookup skinLookup)
+    {
+        final GConnectorSkin connectorSkin = skinLookup.lookupConnector(connector);
+        final GNode parent = connector.getParent();
+
+        final GNodeSkin nodeSkin = skinLookup.lookupNode(parent);
+        if (nodeSkin == null)
+        {
+            return Point2D.ZERO;
+        }
+
+        nodeSkin.layoutConnectors();
+
+        final double nodeX = nodeSkin.getRoot().getLayoutX();
+        final double nodeY = nodeSkin.getRoot().getLayoutY();
+
+        final Point2D connectorPosition = nodeSkin.getConnectorPosition(connectorSkin);
+
+        final double connectorX = connectorPosition.getX();
+        final double connectorY = connectorPosition.getY();
+
+        return new Point2D(
+                GeometryUtils.moveOnPixel(nodeX + connectorX),
+                GeometryUtils.moveOnPixel(nodeY + connectorY)
+        );
     }
 }
