@@ -113,7 +113,7 @@ public class DefaultConnectorSkin extends GConnectorSkin {
                 break;
 
             default:
-                throw new IllegalArgumentException("Estilo de conector desconhecido ou nao suportado: " + style);
+                throw new IllegalArgumentException("Unknown or unsupported connector style: " + style);
         }
     }
 

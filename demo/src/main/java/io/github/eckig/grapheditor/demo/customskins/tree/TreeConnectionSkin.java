@@ -89,7 +89,6 @@ public class TreeConnectionSkin extends GConnectionSkin {
         // End: Target position
         points[1] = GNodeSkin.calculateGlobalConnectorPosition(item.getTarget(), skinLookup);
 
-        // CORREÇÃO: Força o redesenho mantendo o nome do método original esperado pela demo
         draw(points);
 
         return points;
@@ -119,6 +118,7 @@ public class TreeConnectionSkin extends GConnectionSkin {
             drawSelectionHalo();
         }
     }
+    
     /**
      * Handles mouse-pressed events on the connection skin to select / de-select the connection.
      *

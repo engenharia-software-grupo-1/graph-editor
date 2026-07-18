@@ -122,11 +122,6 @@ public abstract class GNodeSkin extends GSkin<GNode>
         };
     }
 
-    // ADICIONE ESTE MÉTODO NO FINAL DE GNODESKIN.JAVA
-
-    /**
-     * Auxiliar estático para calcular a posição global de um conector baseado no LookUp de Skins.
-     */
     public static Point2D calculateGlobalConnectorPosition(final GConnector connector, final SkinLookup skinLookup)
     {
         final GConnectorSkin connectorSkin = skinLookup.lookupConnector(connector);
@@ -138,7 +133,6 @@ public abstract class GNodeSkin extends GSkin<GNode>
             return Point2D.ZERO;
         }
 
-        // Força o layout dos conectores no próprio Skin do nó
         nodeSkin.layoutConnectors();
 
         final double nodeX = nodeSkin.getRoot().getLayoutX();
@@ -149,7 +143,6 @@ public abstract class GNodeSkin extends GSkin<GNode>
         final double connectorX = connectorPosition.getX();
         final double connectorY = connectorPosition.getY();
 
-        // Invoca a matemática pura que sobrou em GeometryUtils
         return new Point2D(
                 GeometryUtils.moveOnPixel(nodeX + connectorX),
                 GeometryUtils.moveOnPixel(nodeY + connectorY)
